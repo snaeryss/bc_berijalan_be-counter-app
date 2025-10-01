@@ -9,7 +9,7 @@ export const SGetAllCounters = async (
 ): Promise<IGlobalResponse> => {
   const whereCondition: any = {
     deletedAt: null,
-  };
+  }; 
 
   if (!includeInactive) {
     whereCondition.isActive = true;

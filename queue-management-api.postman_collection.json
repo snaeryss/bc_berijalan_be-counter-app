@@ -1,0 +1,674 @@
+{
+  "info": {
+    "name": "Queue Management System API",
+    "description": "API collection for Queue Management System backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication and admin management endpoints",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Authenticates an admin user and returns a JWT token"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.status === true && response.data && response.data.token) {",
+                  "    pm.globals.set('access', response.data.token);",
+                  "    pm.globals.set('admin_id', response.data.admin.id);",
+                  "    console.log('Login successful - Token stored in global variable: access');",
+                  "} else {",
+                  "    console.log('Login failed or token not found in response');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Admins",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth"]
+            },
+            "description": "Retrieves a list of all admin users"
+          }
+        },
+        {
+          "name": "Get Admin by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{admin_id}}",
+                  "description": "The ID of the admin to retrieve"
+                }
+              ]
+            },
+            "description": "Retrieves a specific admin by ID"
+          }
+        },
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"newadmin\",\n    \"password\": \"password123\",\n    \"email\": \"newadmin@example.com\",\n    \"name\": \"New Admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "create"]
+            },
+            "description": "Creates a new admin user"
+          }
+        },
+        {
+          "name": "Update Admin",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"updatedadmin\",\n    \"password\": \"newpassword123\",\n    \"email\": \"updated@example.com\",\n    \"name\": \"Updated Admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "The ID of the admin to update"
+                }
+              ]
+            },
+            "description": "Updates an existing admin user"
+          }
+        },
+        {
+          "name": "Delete Admin",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "The ID of the admin to delete"
+                }
+              ]
+            },
+            "description": "Deletes an admin user"
+          }
+        },
+        {
+          "name": "Toggle Admin Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/:id/toggle-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", ":id", "toggle-status"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "The ID of the admin to toggle status"
+                }
+              ]
+            },
+            "description": "Toggles the active status of an admin (enable/disable)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Counters",
+      "description": "Counter (service desk) management endpoints",
+      "item": [
+        {
+          "name": "Get All Counters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/counters",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "counters"]
+            },
+            "description": "Retrieves a list of all service counters"
+          }
+        },
+        {
+          "name": "Get Counter by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/counters/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "counters", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "The ID of the counter to retrieve"
+                }
+              ]
+            },
+            "description": "Retrieves a specific counter by ID"
+          }
+        },
+        {
+          "name": "Create Counter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Counter 1\",\n    \"max_queue\": 99\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/counters/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "counters", "create"]
+            },
+            "description": "Creates a new service counter"
+          }
+        },
+        {
+          "name": "Update Counter",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Counter\",\n    \"max_queue\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/counters/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "counters", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "The ID of the counter to update"
+                }
+              ]
+            },
+            "description": "Updates an existing service counter"
+          }
+        },
+        {
+          "name": "Delete Counter",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/counters/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "counters", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "The ID of the counter to delete"
+                }
+              ]
+            },
+            "description": "Deletes a service counter"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Queues",
+      "description": "Queue management endpoints",
+      "item": [
+        {
+          "name": "Claim Queue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues/claim",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "queues", "claim"]
+            },
+            "description": "Claims a new queue number for a customer"
+          }
+        },
+        {
+          "name": "Release Queue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"queue_number\": 42,\n    \"counter_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues/release",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "queues", "release"]
+            },
+            "description": "Releases a claimed queue (customer leaves without being served)"
+          }
+        },
+        {
+          "name": "Get Current Queues",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "queues", "current"]
+            },
+            "description": "Retrieves all current active queues in the system"
+          }
+        },
+        {
+          "name": "Next Queue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"counter_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues/next",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "queues", "next"]
+            },
+            "description": "Processes the next queue for a specific counter"
+          }
+        },
+        {
+          "name": "Skip Queue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"counter_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues/skip",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "queues", "skip"]
+            },
+            "description": "Skips the current queue for a counter and moves to the next"
+          }
+        },
+        {
+          "name": "Reset Queues",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"counter_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/queues/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "queues", "reset"]
+            },
+            "description": "Resets all queues or queues for a specific counter"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cron Jobs",
+      "description": "Cron job management endpoints",
+      "item": [
+        {
+          "name": "Get Cron Jobs Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cron/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cron", "status"]
+            },
+            "description": "Retrieves the status of all configured cron jobs and lists available jobs"
+          }
+        },
+        {
+          "name": "Run Job Manually",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cron/run/:jobName",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cron", "run", ":jobName"],
+              "variable": [
+                {
+                  "key": "jobName",
+                  "value": "queueCleanup",
+                  "description": "The name of the job to run"
+                }
+              ]
+            },
+            "description": "Executes a specific cron job immediately"
+          }
+        },
+        {
+          "name": "Control Job",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"action\": \"start\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cron/control/:jobName",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cron", "control", ":jobName"],
+              "variable": [
+                {
+                  "key": "jobName",
+                  "value": "queueCleanup",
+                  "description": "The name of the job to control"
+                }
+              ]
+            },
+            "description": "Starts or stops a specific cron job"
+          }
+        },
+        {
+          "name": "Get Cleanup Preview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cron/cleanup/preview?daysOld=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cron", "cleanup", "preview"],
+              "query": [
+                {
+                  "key": "daysOld",
+                  "value": "1",
+                  "description": "Age threshold in days for cleanup"
+                }
+              ]
+            },
+            "description": "Provides a preview of the data that would be cleaned up"
+          }
+        },
+        {
+          "name": "Run Cleanup Manually",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"type\": \"full\",\n    \"daysOld\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cron/cleanup/run",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cron", "cleanup", "run"]
+            },
+            "description": "Executes cleanup operations manually"
+          }
+        },
+        {
+          "name": "Validate Cron Expression",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"expression\": \"0 2 * * *\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cron/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cron", "validate"]
+            },
+            "description": "Validates a cron expression format"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Server-Sent Events",
+      "description": "Server-Sent Events (SSE) endpoint for real-time updates",
+      "item": [
+        {
+          "name": "Initialize SSE Connection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sse",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sse"]
+            },
+            "description": "Establishes a Server-Sent Events (SSE) connection for real-time updates"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Check if baseUrl global variable exists",
+          "if (!pm.globals.get('baseUrl')) {",
+          "    console.error('WARNING: baseUrl global variable is not set. Please set it to your API base URL (e.g., http://localhost:3000)');",
+          "    // Set a default value",
+          "    pm.globals.set('baseUrl', 'http://localhost:3000');",
+          "    console.log('Set default baseUrl to: http://localhost:3000');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": []
+}

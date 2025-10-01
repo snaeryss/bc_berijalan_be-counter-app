@@ -1,0 +1,52 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Admin {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique @db.VarChar(50)
+  password  String    
+  email     String    @unique @db.VarChar(255)
+  name      String    @db.VarChar(255)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model Counter {
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  currentQueue Int       @default(0)
+  maxQueue     Int       @default(99)
+  queues       Queue[]
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+}
+
+model Queue {
+  id        Int          @id @default(autoincrement())
+  number    Int
+  status    EQueueStatus @default(CLAIMED)
+  counterId Int
+  counter   Counter      @relation(fields: [counterId], references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
+}
+
+enum EQueueStatus {
+  CLAIMED
+  CALLED
+  SERVED
+  SKIPPED
+  RELEASED
+  RESET
+}

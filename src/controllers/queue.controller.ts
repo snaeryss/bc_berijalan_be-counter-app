@@ -14,6 +14,8 @@ import {
   SUpdateQueue,
   SUpdateQueueStatus,
   SDeleteQueue,
+  SBulkDeleteQueues,
+  SServeQueue,
 } from "../services/queue.service";
 import { AppError } from "../errors/AppError";
 
@@ -264,6 +266,37 @@ export const CDeleteQueue = async (
 
     const result = await SDeleteQueue(id);
 
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CBulkDeleteQueues = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw AppError.badRequest("IDs must be a non-empty array", null, "ids");
+    }
+    const result = await SBulkDeleteQueues(ids);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CServeQueue = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { counter_id } = req.body;
+    const result = await SServeQueue(counter_id);
     res.status(200).json(result);
   } catch (error) {
     next(error);

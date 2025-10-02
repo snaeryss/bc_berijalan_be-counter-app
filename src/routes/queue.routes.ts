@@ -14,6 +14,8 @@ import {
   CUpdateQueue,
   CUpdateQueueStatus,
   CDeleteQueue,
+  CBulkDeleteQueues,
+  CServeQueue,
 } from "../controllers/queue.controller";
 import { MValidate } from "../middlewares/validate.middleware";
 import { MAuthenticate } from "../middlewares/authenticate.middleware";
@@ -80,6 +82,17 @@ router.delete(
   MAuthenticate,
   MValidate(VBaseID, "params"),
   CDeleteQueue
+);
+router.post(
+  "/bulk-delete",
+  MAuthenticate,
+  CBulkDeleteQueues
+);
+router.post(
+  "/serve",
+  MAuthenticate,
+  MValidate(VSkipQueueSchema), 
+  CServeQueue
 );
 
 export default router;

@@ -231,6 +231,68 @@ export const SGetCurrentQueues = async (
   };
 };
 
+// export const SNextQueue = async (
+//   counterId: number
+// ): Promise<IGlobalResponse> => {
+//   if (!counterId || counterId <= 0) {
+//     throw AppError.badRequest("Invalid counter ID", null, "counterId");
+//   }
+
+//   const counter = await prisma.counter.findUnique({
+//     where: {
+//       id: counterId,
+//       deletedAt: null,
+//     },
+//   });
+
+//   if (!counter) {
+//     throw AppError.notFound("Counter not found");
+//   }
+
+//   if (!counter.isActive) {
+//     throw AppError.badRequest("Counter is not active", null, "counterId");
+//   }
+
+//   const claimedQueue = await prisma.queue.findFirst({
+//     where: {
+//       counterId,
+//       status: "CLAIMED",
+//     },
+//     orderBy: {
+//       createdAt: "asc",
+//     },
+//   });
+
+//   if (!claimedQueue) {
+//     throw AppError.notFound("No claimed queues found for this counter");
+//   }
+
+//   await prisma.queue.update({
+//     where: { id: claimedQueue.id },
+//     data: { status: "CALLED" },
+//   });
+
+//   await publishQueueUpdate({
+//     event: "queue_called",
+//     counter_id: counterId,
+//     queue_number: claimedQueue.number,
+//     counter_name: counter.name,
+//   });
+
+//   return {
+//     status: true,
+//     message: "Next queue called successfully",
+//     data: {
+//       queueNumber: claimedQueue.number,
+//       counterName: counter.name,
+//       counterId,
+//     },
+//   };
+// };
+
+// Di src/services/queue.service.ts
+// Replace fungsi SNextQueue yang lama dengan ini:
+
 export const SNextQueue = async (
   counterId: number
 ): Promise<IGlobalResponse> => {
@@ -253,7 +315,8 @@ export const SNextQueue = async (
     throw AppError.badRequest("Counter is not active", null, "counterId");
   }
 
-  const claimedQueue = await prisma.queue.findFirst({
+  // PERBAIKAN: Cari queue dengan status CLAIMED terlebih dahulu
+  let claimedQueue = await prisma.queue.findFirst({
     where: {
       counterId,
       status: "CLAIMED",
@@ -263,19 +326,45 @@ export const SNextQueue = async (
     },
   });
 
+  // JIKA TIDAK ADA CLAIMED QUEUE, BUAT BARU
   if (!claimedQueue) {
-    throw AppError.notFound("No claimed queues found for this counter");
+    console.log("No claimed queue found, creating new queue...");
+    
+    // Cari nomor antrian berikutnya
+    let nextQueueNumber = counter.currentQueue + 1;
+    if (nextQueueNumber > counter.maxQueue) {
+      nextQueueNumber = 1;
+    }
+
+    // Buat queue baru dengan status CLAIMED
+    claimedQueue = await prisma.queue.create({
+      data: {
+        number: nextQueueNumber,
+        status: "CLAIMED",
+        counterId: counterId,
+      },
+    });
+
+    // Update counter current queue
+    await prisma.counter.update({
+      where: { id: counterId },
+      data: { currentQueue: nextQueueNumber },
+    });
+
+    console.log(`Created new queue: ${nextQueueNumber} for counter ${counterId}`);
   }
 
-  await prisma.queue.update({
+  // Update status queue menjadi CALLED
+  const calledQueue = await prisma.queue.update({
     where: { id: claimedQueue.id },
     data: { status: "CALLED" },
   });
 
+  // Publish SSE event
   await publishQueueUpdate({
     event: "queue_called",
     counter_id: counterId,
-    queue_number: claimedQueue.number,
+    queue_number: calledQueue.number,
     counter_name: counter.name,
   });
 
@@ -283,7 +372,15 @@ export const SNextQueue = async (
     status: true,
     message: "Next queue called successfully",
     data: {
-      queueNumber: claimedQueue.number,
+      queue: {
+        id: calledQueue.id,
+        number: calledQueue.number,
+        status: calledQueue.status,
+        counterId: calledQueue.counterId,
+        createdAt: calledQueue.createdAt,
+        updatedAt: calledQueue.updatedAt,
+      },
+      queueNumber: calledQueue.number,
       counterName: counter.name,
       counterId,
     },
@@ -838,5 +935,77 @@ export const SDeleteQueue = async (id: number): Promise<IGlobalResponse> => {
   return {
     status: true,
     message: "Queue deleted successfully",
+  };
+};
+
+export const SBulkDeleteQueues = async (ids: number[]): Promise<IGlobalResponse> => {
+  const queues = await prisma.queue.findMany({
+    where: {
+      id: { in: ids },
+      deletedAt: null,
+    },
+  });
+
+  if (queues.length !== ids.length) {
+    throw AppError.notFound("One or more queues not found or already deleted.");
+  }
+  
+  const calledQueue = queues.find(q => q.status === 'CALLED');
+  if (calledQueue) {
+    throw AppError.conflict(
+      `Cannot delete queue number ${calledQueue.number} because it is currently being called.`
+    );
+  }
+
+  const result = await prisma.queue.updateMany({
+    where: {
+      id: { in: ids },
+    },
+    data: {
+      deletedAt: new Date(),
+      status: "RESET",
+      updatedAt: new Date(),
+    },
+  });
+
+  return {
+    status: true,
+    message: `${result.count} queues deleted successfully`,
+  };
+};
+
+export const SServeQueue = async (
+  counterId: number
+): Promise<IGlobalResponse> => {
+  if (!counterId || counterId <= 0) {
+    throw AppError.badRequest("Invalid counter ID", null, "counterId");
+  }
+
+  const calledQueue = await prisma.queue.findFirst({
+    where: {
+      counterId,
+      status: "CALLED",
+    },
+  });
+
+  if (!calledQueue) {
+    throw AppError.notFound("No active queue being called for this counter");
+  }
+
+  const servedQueue = await prisma.queue.update({
+    where: { id: calledQueue.id },
+    data: { status: "SERVED" },
+  });
+
+  await publishQueueUpdate({
+    event: "queue_served", 
+    counter_id: counterId,
+    queue_number: servedQueue.number,
+  });
+
+  return {
+    status: true,
+    message: "Queue served successfully",
+    data: servedQueue,
   };
 };

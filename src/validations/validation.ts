@@ -94,12 +94,12 @@ export const VAdminSchema = Joi.object({
 
 export const VUpdateAdminSchema = Joi.object({
   username: Joi.string().optional().trim().min(3),
-  password: Joi.string().optional().allow("", null).min(8), // Sesuaikan dengan service
+  password: Joi.string().optional().allow("", null).min(8),
   email: Joi.string().email().optional(),
   name: Joi.string().optional().trim().min(2),
-  isActive: Joi.boolean().optional(), // Tambahkan field isActive
+  isActive: Joi.boolean().optional(), 
 })
-  .min(1) // Minimal 1 field harus diisi
+  .min(1) 
   .messages({
     "object.min": "At least one field must be provided for update",
   });

@@ -31,7 +31,7 @@ const createCronTask = (
 const scheduleQueueCleanup = (): void => {
   const taskFunction = async () => {
     console.log("Running scheduled queue cleanup...");
-    const result = await fullCleanup(1); // Hapus data lebih dari 1 hari
+    const result = await fullCleanup(1);
     console.log("Cleanup results:", result);
   };
 

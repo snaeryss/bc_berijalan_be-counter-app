@@ -19,7 +19,6 @@ export class AppError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 
-  // static method untuk beberapa error code yang sering digunakan
   static badRequest(
     message: string = "Bad Request",
     errorDetail?: any,

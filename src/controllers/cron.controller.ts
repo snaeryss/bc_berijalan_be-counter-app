@@ -16,9 +16,6 @@ import {
 } from "../services/cleanup.service";
 import { IGlobalResponse } from "../interfaces/global.interface";
 
-/**
- * Controller untuk mendapatkan status semua cron jobs
- */
 export const CGetCronJobsStatus = async (
   req: Request,
   res: Response,

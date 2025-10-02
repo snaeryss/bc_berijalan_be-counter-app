@@ -61,9 +61,6 @@ export const CUpdateAdmin = async (
   }
 };
 
-/**
- * Controller for deleting an admin
- */
 export const CDeleteAdmin = async (
   req: Request,
   res: Response,
@@ -80,9 +77,6 @@ export const CDeleteAdmin = async (
   }
 };
 
-/**
- * Controller for getting all admins
- */
 export const CGetAllAdmins = async (
   req: Request,
   res: Response,
@@ -97,9 +91,6 @@ export const CGetAllAdmins = async (
   }
 };
 
-/**
- * Controller for getting admin by ID
- */
 export const CGetAdminById = async (
   req: Request,
   res: Response,
@@ -115,9 +106,6 @@ export const CGetAdminById = async (
   }
 };
 
-/**
- * Controller for toggling admin status
- */
 export const CToggleAdminStatus = async (
   req: Request,
   res: Response,

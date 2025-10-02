@@ -15,8 +15,7 @@ export const SGetMetrics = async (): Promise<IGlobalResponse> => {
   const calledCount = await prisma.queue.count({
     where: { status: "CALLED" },
   });
-  // --- PERBAIKAN ---
-  // Mengubah query untuk menghitung status "SERVED"
+
   const servedCount = await prisma.queue.count({
     where: { status: "SERVED" },
   });
@@ -30,7 +29,6 @@ export const SGetMetrics = async (): Promise<IGlobalResponse> => {
     data: {
       waiting: waitingCount,
       called: calledCount,
-      // Frontend mengharapkan key 'released', jadi kita kirim data 'servedCount' dengan key 'released'
       released: servedCount, 
       skipped: skippedCount,
     },
@@ -110,7 +108,7 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
       queueNumber: queue.number,
       counterName: queue.counter.name,
       counterId: queue.counter.id,
-      estimatedWaitTime: estimatedWaitTime, // in minutes
+      estimatedWaitTime: estimatedWaitTime,
       positionInQueue: waitingQueueCount + 1,
     },
   };
@@ -207,14 +205,14 @@ export const SGetCurrentQueues = async (
       counterId: {
         in: counters.map((c) => c.id),
       },
-      status: { in: ["CALLED", "SERVED"] }, // CALLED (aktif) atau SERVED (baru selesai)
+      status: { in: ["CALLED", "SERVED"] }, 
       counter: {
         isActive: includeInactive ? undefined : true,
         deletedAt: null,
       },
     },
     orderBy: { updatedAt: "desc" },
-    distinct: ["counterId"], // Ambil 1 per counter
+    distinct: ["counterId"], 
   });
 
   const data = counters.map((counter) => {
@@ -257,7 +255,7 @@ export const SGetActiveQueueByCounterId = async (
       status: "CALLED",
     },
     orderBy: {
-      updatedAt: "desc",
+      updatedAt: "desc", 
     },
   });
 
@@ -298,7 +296,6 @@ export const SNextQueue = async (
     throw AppError.badRequest("Counter is not active", null, "counterId");
   }
 
-  // PERBAIKAN: Cari queue dengan status CLAIMED terlebih dahulu
   let claimedQueue = await prisma.queue.findFirst({
     where: {
       counterId,
@@ -309,17 +306,14 @@ export const SNextQueue = async (
     },
   });
 
-  // JIKA TIDAK ADA CLAIMED QUEUE, BUAT BARU
   if (!claimedQueue) {
     console.log("No claimed queue found, creating new queue...");
-    
-    // Cari nomor antrian berikutnya
+
     let nextQueueNumber = counter.currentQueue + 1;
     if (nextQueueNumber > counter.maxQueue) {
       nextQueueNumber = 1;
     }
 
-    // Buat queue baru dengan status CLAIMED
     claimedQueue = await prisma.queue.create({
       data: {
         number: nextQueueNumber,
@@ -328,7 +322,6 @@ export const SNextQueue = async (
       },
     });
 
-    // Update counter current queue
     await prisma.counter.update({
       where: { id: counterId },
       data: { currentQueue: nextQueueNumber },
@@ -337,13 +330,12 @@ export const SNextQueue = async (
     console.log(`Created new queue: ${nextQueueNumber} for counter ${counterId}`);
   }
 
-  // Update status queue menjadi CALLED
   const calledQueue = await prisma.queue.update({
     where: { id: claimedQueue.id },
     data: { status: "CALLED" },
   });
 
-  // Publish SSE event
+
   await publishQueueUpdate({
     event: "queue_called",
     counter_id: counterId,
@@ -643,7 +635,7 @@ export const SGetQueueById = async (id: number): Promise<IGlobalResponse> => {
     throw AppError.notFound("Queue not found");
   }
 
-  // Hitung posisi dalam antrean
+  
   const position = await prisma.queue.count({
     where: {
       counterId: queue.counterId,
@@ -690,7 +682,6 @@ export const SCreateQueue = async (
     throw AppError.badRequest("Counter is not active", null, "counterId");
   }
 
-  // Validasi queue number
   if (queueNumber < 1 || queueNumber > counter.maxQueue) {
     throw AppError.badRequest(
       `Queue number must be between 1 and ${counter.maxQueue}`,
@@ -775,7 +766,6 @@ export const SUpdateQueue = async (
     updateData.counterId = counterId;
   }
 
-  // Jika update queue number
   if (queueNumber !== undefined) {
     const targetCounterId = counterId || queue.counterId;
     const counter = await prisma.counter.findUnique({
@@ -793,7 +783,6 @@ export const SUpdateQueue = async (
     updateData.number = queueNumber;
   }
 
-  // Jika update status
   if (status !== undefined) {
     const validStatuses = [
       "CLAIMED",
@@ -849,15 +838,12 @@ export const SUpdateQueueStatus = async (
 
   switch (statusAction) {
     case "active":
-      // Set status ke CLAIMED (aktif kembali)
       updateData.status = "CLAIMED";
       break;
     case "inactive":
-      // Set status ke RELEASED (tidak aktif sementara)
       updateData.status = "RELEASED";
       break;
     case "disable":
-      // Soft delete
       updateData.deletedAt = new Date();
       updateData.status = "RESET";
       break;
@@ -884,9 +870,7 @@ export const SUpdateQueueStatus = async (
   };
 };
 
-/**
- * Delete queue (soft delete)
- */
+
 export const SDeleteQueue = async (id: number): Promise<IGlobalResponse> => {
   const queue = await prisma.queue.findFirst({
     where: {
@@ -899,7 +883,6 @@ export const SDeleteQueue = async (id: number): Promise<IGlobalResponse> => {
     throw AppError.notFound("Queue not found");
   }
 
-  // Cek apakah queue sedang dipanggil (CALLED)
   if (queue.status === "CALLED") {
     throw AppError.conflict(
       "Cannot delete queue that is currently being called. Please serve or skip the queue first."

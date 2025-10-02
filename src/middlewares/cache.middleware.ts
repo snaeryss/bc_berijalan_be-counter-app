@@ -5,7 +5,7 @@ import { CacheOptions } from "../interfaces/cache.interface";
 
 export const MCache = (options: CacheOptions = {}) => {
   const {
-    ttl = 300, // Default 5 menit
+    ttl = 300, 
     keyPrefix = "api_cache",
     skipCacheIf,
     invalidateOnMethods = ["POST", "PUT", "DELETE", "PATCH"],

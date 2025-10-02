@@ -1,4 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+// File: src/services/queue.service.ts
+
+import { PrismaClient, EQueueStatus } from "@prisma/client";
 import { AppError } from "../errors/AppError";
 import { publishQueueUpdate } from "../config/redis.config";
 import { IGlobalResponse } from "../interfaces/global.interface";
@@ -13,8 +15,10 @@ export const SGetMetrics = async (): Promise<IGlobalResponse> => {
   const calledCount = await prisma.queue.count({
     where: { status: "CALLED" },
   });
-  const releasedCount = await prisma.queue.count({
-    where: { status: "RELEASED" },
+  // --- PERBAIKAN ---
+  // Mengubah query untuk menghitung status "SERVED"
+  const servedCount = await prisma.queue.count({
+    where: { status: "SERVED" },
   });
   const skippedCount = await prisma.queue.count({
     where: { status: "SKIPPED" },
@@ -26,7 +30,8 @@ export const SGetMetrics = async (): Promise<IGlobalResponse> => {
     data: {
       waiting: waitingCount,
       called: calledCount,
-      released: releasedCount,
+      // Frontend mengharapkan key 'released', jadi kita kirim data 'servedCount' dengan key 'released'
+      released: servedCount, 
       skipped: skippedCount,
     },
   };
@@ -231,67 +236,45 @@ export const SGetCurrentQueues = async (
   };
 };
 
-// export const SNextQueue = async (
-//   counterId: number
-// ): Promise<IGlobalResponse> => {
-//   if (!counterId || counterId <= 0) {
-//     throw AppError.badRequest("Invalid counter ID", null, "counterId");
-//   }
+export const SGetActiveQueueByCounterId = async (
+  counterId: number
+): Promise<IGlobalResponse> => {
+  if (!counterId || counterId <= 0) {
+    throw AppError.badRequest("Invalid counter ID", null, "counterId");
+  }
 
-//   const counter = await prisma.counter.findUnique({
-//     where: {
-//       id: counterId,
-//       deletedAt: null,
-//     },
-//   });
+  const counter = await prisma.counter.findUnique({
+    where: { id: counterId, deletedAt: null },
+  });
 
-//   if (!counter) {
-//     throw AppError.notFound("Counter not found");
-//   }
+  if (!counter) {
+    throw AppError.notFound("Counter not found");
+  }
 
-//   if (!counter.isActive) {
-//     throw AppError.badRequest("Counter is not active", null, "counterId");
-//   }
+  const activeQueue = await prisma.queue.findFirst({
+    where: {
+      counterId,
+      status: "CALLED",
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
 
-//   const claimedQueue = await prisma.queue.findFirst({
-//     where: {
-//       counterId,
-//       status: "CLAIMED",
-//     },
-//     orderBy: {
-//       createdAt: "asc",
-//     },
-//   });
+  if (!activeQueue) {
+    return {
+      status: true,
+      message: "No active queue being called for this counter.",
+      data: null, 
+    };
+  }
 
-//   if (!claimedQueue) {
-//     throw AppError.notFound("No claimed queues found for this counter");
-//   }
-
-//   await prisma.queue.update({
-//     where: { id: claimedQueue.id },
-//     data: { status: "CALLED" },
-//   });
-
-//   await publishQueueUpdate({
-//     event: "queue_called",
-//     counter_id: counterId,
-//     queue_number: claimedQueue.number,
-//     counter_name: counter.name,
-//   });
-
-//   return {
-//     status: true,
-//     message: "Next queue called successfully",
-//     data: {
-//       queueNumber: claimedQueue.number,
-//       counterName: counter.name,
-//       counterId,
-//     },
-//   };
-// };
-
-// Di src/services/queue.service.ts
-// Replace fungsi SNextQueue yang lama dengan ini:
+  return {
+    status: true,
+    message: "Active queue retrieved successfully",
+    data: activeQueue,
+  };
+};
 
 export const SNextQueue = async (
   counterId: number

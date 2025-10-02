@@ -16,6 +16,7 @@ import {
   CDeleteQueue,
   CBulkDeleteQueues,
   CServeQueue,
+  CGetActiveQueueByCounterId,
 } from "../controllers/queue.controller";
 import { MValidate } from "../middlewares/validate.middleware";
 import { MAuthenticate } from "../middlewares/authenticate.middleware";
@@ -93,6 +94,12 @@ router.post(
   MAuthenticate,
   MValidate(VSkipQueueSchema), 
   CServeQueue
+);
+router.get(
+  "/counter/:counter_id/active",
+  MAuthenticate,
+  MValidate(VBaseID, "params"),
+  CGetActiveQueueByCounterId
 );
 
 export default router;

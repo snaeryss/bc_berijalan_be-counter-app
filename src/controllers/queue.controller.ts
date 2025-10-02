@@ -16,6 +16,7 @@ import {
   SDeleteQueue,
   SBulkDeleteQueues,
   SServeQueue,
+  SGetActiveQueueByCounterId, 
 } from "../services/queue.service";
 import { AppError } from "../errors/AppError";
 
@@ -297,6 +298,23 @@ export const CServeQueue = async (
   try {
     const { counter_id } = req.body;
     const result = await SServeQueue(counter_id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CGetActiveQueueByCounterId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const counter_id = parseInt(req.params.counter_id);
+    if (isNaN(counter_id)) {
+      throw AppError.badRequest("Invalid counter ID", null, "counter_id");
+    }
+    const result = await SGetActiveQueueByCounterId(counter_id);
     res.status(200).json(result);
   } catch (error) {
     next(error);

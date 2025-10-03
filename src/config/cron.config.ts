@@ -99,10 +99,9 @@ export const initializeCronJobs = (): void => {
   console.log("Initializing cron jobs...");
 
   scheduleQueueCleanup();
-
   scheduleCacheCleanup();
-
   scheduleCleanupPreview();
+  scheduleStatusCleanup();
 
   console.log("All cron jobs initialized successfully");
 };
